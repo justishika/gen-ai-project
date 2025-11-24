@@ -9,9 +9,9 @@ export const state = {
   thumbnailUrl: "",
 };
 
-export const loadSummary = async function () {
+export const loadSummary = async function (summaryType = 'short') {
   try {
-    const data = await getJSON(`${API_URL}/summary?v=${state.videoId}`);
+    const data = await getJSON(`${API_URL}/summary?v=${state.videoId}&type=${summaryType}`);
     state.summary = data.data;
   } catch (err) {
     throw err;

@@ -3,7 +3,7 @@ import { state } from "./model.js";
 const metaDataParent = document.querySelector(".meta-data-container");
 const summaryParent = document.querySelector(".summary-container");
 const button1 = document.querySelector("#button1");
-// const button2 = document.querySelector("#button2");
+const button2 = document.querySelector("#button2");
 const search = document.querySelector("#search-input");
 
 export const displayMetaData = function () {
@@ -16,9 +16,7 @@ export const displayMetaData = function () {
 };
 
 export const getVideoUrl = function () {
-  const url = search.value;
-  search.value = "";
-  return url;
+  return search.value;
 };
 
 const clear = function (element) {
@@ -53,7 +51,7 @@ export const renderSummary = function () {
   const markup = `
     <div class="summary">
         <h2>Video Summary:</h2>
-          <div class="summary-text">${summary}</div>
+        <div class="summary-text">${summary}</div>
     </div>`;
   summaryParent.insertAdjacentHTML("afterbegin", markup);
 };
@@ -75,6 +73,11 @@ export const scrollToSummary = function () {
 export const addHandlerSearch = function (handler) {
   button1.addEventListener("click", function (e) {
     e.preventDefault();
-    handler();
+    handler('short');
+  });
+
+  button2.addEventListener("click", function (e) {
+    e.preventDefault();
+    handler('detailed');
   });
 };

@@ -6,15 +6,14 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
-# CORS(app, resources={r"/summary": {"origins": "https://summarizeyoutube.netlify.app/"}})
-
 
 @app.route('/summary', methods=['GET'])
 def youtube_summarizer():
     video_id = request.args.get('v')
+    summary_type = request.args.get('type', 'short')
     try:
         transcript = get_transcript(video_id)
-        summary = gemini_summarize(transcript)
+        summary = gemini_summarize(transcript, summary_type)
     except NoTranscriptFound:
         return jsonify({"data": "No English Subtitles found", "error": True})
     except InvalidVideoId:
@@ -27,8 +26,6 @@ def youtube_summarizer():
 
 
 def get_transcript(video_id):
-    # Support multiple youtube_transcript_api versions: try available methods
-    # instantiate API (methods are instance methods and expect 'self')
     api = YouTubeTranscriptApi()
     transcript_response = None
     last_exc = None
@@ -56,9 +53,7 @@ def get_transcript(video_id):
 
     texts = []
     
-    # Handle FetchedTranscript objects: try to iterate directly or use __iter__
     if hasattr(transcript_response, '__iter__') and not isinstance(transcript_response, (str, bytes, dict)):
-        # FetchedTranscript is iterable, so iterate over it directly
         try:
             for item in transcript_response:
                 if isinstance(item, dict):
@@ -66,19 +61,17 @@ def get_transcript(video_id):
                     if t:
                         texts.append(t)
                 elif hasattr(item, 'text'):
-                    # Handle snippet objects with .text attribute
                     if item.text:
                         texts.append(item.text)
                 elif isinstance(item, str):
                     texts.append(item)
-            if texts:  # If we got items, return now
+            if texts:
                 joined = ' '.join(texts)
                 print(f"get_transcript: transcript length={len(joined)}")
                 return joined
         except Exception as e:
             print(f"Failed to iterate response: {repr(e)}")
     
-    # Fallback: try .entries attribute
     if hasattr(transcript_response, 'entries'):
         for entry in transcript_response.entries:
             if isinstance(entry, dict):
@@ -88,7 +81,6 @@ def get_transcript(video_id):
             elif hasattr(entry, 'text'):
                 if entry.text:
                     texts.append(entry.text)
-    # Handle lists (old API or other responses)
     elif isinstance(transcript_response, list):
         for item in transcript_response:
             if isinstance(item, dict):
@@ -119,8 +111,7 @@ def get_transcript(video_id):
     return joined
 
 
-def gemini_summarize(transcript):
-    # Use environment variable or config.py GEMINI_API_KEY
+def gemini_summarize(transcript, summary_type='short'):
     import os
     api_key = os.environ.get('GEMINI_API_KEY') or GEMINI_API_KEY
     if not api_key or not api_key.strip():
@@ -128,19 +119,25 @@ def gemini_summarize(transcript):
 
     genai.configure(api_key=api_key)
 
-    # Truncate very long transcripts
     max_chars = 60000
     if len(transcript) > max_chars:
         transcript = transcript[:max_chars] + "\n\n[Truncated transcript]"
 
+    if summary_type == 'detailed':
+        prompt = f"""You have to provide a detailed, in-depth summary of the following YouTube video transcript. 
+        Break it down into key sections with headings and bullet points. Capture all the important details, examples, and nuances.
+        
+        Transcript:
+        {transcript}"""
+    else:
+        prompt = f"""You have to summarize a YouTube video using its transcript in 10 concise points.
+        
+        Transcript:
+        {transcript}"""
+
     try:
         model = genai.GenerativeModel('gemini-2.0-flash')
-        response = model.generate_content(
-            f"""You have to summarize a YouTube video using its transcript in 10 points.
-            
-Transcript:
-{transcript}"""
-        )
+        response = model.generate_content(prompt)
         print("Gemini request succeeded")
         return response.text
     except Exception as e:

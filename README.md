@@ -1,82 +1,93 @@
-# YouTube Videos Summarizer using OpenAI API
+# YouTube Gist Generator 🎥✨
 
-This project utilizes the power of GPT-3.5 to generate concise and informative summaries for YouTube videos. This repository contain both frontend(HTML/CSS/JS) and backend(Flask).
+A modern, AI-powered web application that generates concise summaries of YouTube videos instantly. Built with a sleek Glassmorphism UI and powered by Google's Gemini Pro model.
 
-## Demo
+## 🚀 Features
 
-Visit this link for live demo: https://summarizeyoutube.netlify.app/
+- **Instant Summaries**: Get key points from long videos in seconds.
+- **Modern UI**: Beautiful, responsive interface with glassmorphism effects and neon gradients.
+- **AI-Powered**: Utilizes Google's advanced Gemini 2.0 Flash model for accurate and coherent summaries.
+- **Privacy Focused**: Runs locally and processes transcripts securely.
 
-### Video Demo
+## 🛠️ Tech Stack
 
-https://github.com/UmerrAli/YouTube-Summarizer/assets/106273026/170f3bb1-6762-4430-b8c9-8e90f3c7b7fe
+### Frontend
+- **HTML5 & CSS3**: Custom responsive design with CSS variables and flexbox.
+- **JavaScript (ES6+)**: Modular architecture using MVC pattern.
+- **Parcel**: Blazing fast web application bundler.
 
-## Frontend
+### Backend
+- **Python & Flask**: Lightweight REST API.
+- **Google Gemini API**: For generative AI summarization.
+- **YouTube Transcript API**: To extract video captions.
 
-For the frontend of YouTube Video Summarizer, you'll need Node.js and npm (Node Package Manager) which is included with Node.js. Here is how you can install these prerequisites:
+## ⚙️ Installation & Setup
 
-- Download and install Node.js from https://nodejs.org/.
-- Verify the installation by running the following commands in your terminal or command prompt:
-  ```bash
-  node -v
-  npm -v
-  ```
+Follow these steps to run the project locally.
 
-### Run Locally
+### Prerequisites
+- **Node.js** (v14+ recommended)
+- **Python** (v3.8+ recommended)
+- A **Google Gemini API Key** (Get one [here](https://aistudio.google.com/app/apikey))
 
-Parcel is used as the bundler for the project.
-
-1. Clone the project:
-   ```bash
-   git clone https://github.com/UmerrAli/YouTube-Summarizer
-   ```
-2. Install dependencies using npm:
-   ```bash
-   npm install
-   ```
-3. To start a development server
-   ```bash
-   npm start
-   ```
-   This will start the development server at http://localhost:1234. Open this URL in your browser to view the application.
-   http://localhost:1234/
-
-## Backend
-
-- Make sure Python is installed on your machine. You can download it from https://www.python.org/.
-- Verify the installation by running the following command in your terminal or command prompt:
-
+### 1. Clone the Repository
 ```bash
-python3 --version
+git clone https://github.com/justishika/Video-Gist-Generator.git
+cd Video-Gist-Generator
 ```
 
-Create a virtual environment
+### 2. Backend Setup (Flask API)
+Navigate to the API directory and set up the Python environment.
 
 ```bash
-python3 -m venv venv
-# On Windows
+cd Flask-API
+
+# Create a virtual environment
+python -m venv venv
+
+# Activate the virtual environment
+# On Windows:
 venv\Scripts\activate
-# On macOS/Linux
+# On macOS/Linux:
 source venv/bin/activate
-```
 
-Install dependencies
-
-```bash
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### Set up OpenAI API Key
-
-Open the config.py file and add your OpenAI API key. If you don't have an API key, you can obtain one from the OpenAI platform.
-
+**Configure API Key:**
+Open `Flask-API/config.py` and replace the placeholder with your actual Gemini API key:
 ```python
-API_KEY = 'YOUR_API_KEY'
+GEMINI_API_KEY = 'YOUR_ACTUAL_API_KEY_HERE'
 ```
+*Note: Never commit your actual API key to GitHub!*
 
-After setting up the environment and adding the API key, you can run the Flask application:
-
+**Run the Server:**
+```bash
+python app.py
 ```
-flask run
-```
+The backend will start at `http://127.0.0.1:5000`.
 
-The backend server will be running at http://127.0.0.1:5000/. Make sure the backend is running before testing the frontend.
+### 3. Frontend Setup
+Open a new terminal window, return to the project root, and install frontend dependencies.
+
+```bash
+# Return to root directory if you are in Flask-API
+cd .. 
+
+# Install dependencies
+npm install
+
+# Start the development server
+npm start
+```
+The application will open in your browser at `http://localhost:1234`.
+
+## 📖 Usage
+1. Copy a YouTube video URL (e.g., educational videos, tech talks, podcasts).
+2. Paste it into the search bar on the web app.
+3. Click **"Summarize in 10 Points"**.
+4. Wait a few seconds for the AI to generate your summary!
+
+## 📄 License
+This project is licensed under the ISC License.

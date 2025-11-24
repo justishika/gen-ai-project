@@ -5,7 +5,7 @@ import { getVideoId } from "./helper.js";
 import "core-js/stable";
 import "regenerator-runtime/runtime";
 
-const controlSummary = async function () {
+const controlSummary = async function (summaryType = 'short') {
   try {
     // 0. get video URL from view
     const videoUrl = view.getVideoUrl();
@@ -33,7 +33,7 @@ const controlSummary = async function () {
     view.scrollToSummary();
 
     // 8. get summary from model
-    await model.loadSummary();
+    await model.loadSummary(summaryType);
 
     // 9. Render summary
     view.renderSummary();
