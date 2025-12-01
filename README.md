@@ -60,6 +60,13 @@ Open `Flask-API/config.py` and replace the placeholder with your actual Gemini A
 ```python
 GEMINI_API_KEY = 'YOUR_ACTUAL_API_KEY_HERE'
 ```
+download the below:
+```python
+   cd Flask-API
+   pip install spacy
+   python -m spacy download en_core_web_sm
+```
+
 *Note: Never commit your actual API key to GitHub!*
 
 **Run the Server:**

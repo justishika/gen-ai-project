@@ -4,6 +4,12 @@ import { getVideoId } from "./helper.js";
 import "core-js/stable";
 import "regenerator-runtime/runtime";
 
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 const controlSummary = async function (summaryType = 'short') {
     try {
         // 0. get video URL from view
@@ -41,7 +47,10 @@ const controlSummary = async function (summaryType = 'short') {
         // 10. Add Q&A handlers
         view.addQAHandlers(controlAskQuestion, controlClearConversation, controlLoadInsights);
         
-        // 11. scroll to summary again when loaded
+        // 11. Add NER handler
+        view.addNERHandler(controlExtractEntities);
+        
+        // 12. scroll to summary again when loaded
         view.scrollToSummary();
         
     } catch (error) {
@@ -80,6 +89,21 @@ const controlLoadInsights = async function () {
     } catch (error) {
         console.error("Error loading insights:", error);
         view.renderInsights("Unable to generate insights. Please try again.");
+    }
+};
+
+const controlExtractEntities = async function () {
+    try {
+        view.showNERLoading();
+        const nerData = await model.extractEntities();
+        view.renderNERData(nerData);
+    } catch (error) {
+        console.error("Error extracting entities:", error);
+        view.hideNERLoading();
+        const nerContent = document.getElementById("ner-content");
+        if (nerContent) {
+            nerContent.innerHTML = `<div class="error">${escapeHtml(error.message || "Unable to extract entities. Please try again.")}</div>`;
+        }
     }
 };
 

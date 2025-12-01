@@ -15,6 +15,12 @@ export const state = {
 export const loadSummary = async function (summaryType = 'short') {
     try {
         const data = await getJSON(`${API_URL}/summary?v=${state.videoId}&type=${summaryType}`);
+        
+        // Check if the response has an error
+        if (data.error) {
+            throw new Error(data.data || "Unable to Summarize the video");
+        }
+        
         state.summary = data.data;
     } catch (err) {
         throw err;
@@ -63,6 +69,20 @@ export const loadInsights = async function () {
     try {
         const data = await getJSON(`${API_URL}/get-insights?v=${state.videoId}`);
         state.insights = data.data;
+        return data.data;
+    } catch (err) {
+        throw err;
+    }
+};
+
+export const extractEntities = async function () {
+    try {
+        const data = await getJSON(`${API_URL}/extract-entities?v=${state.videoId}`);
+        
+        if (data.error) {
+            throw new Error(data.data || "Unable to extract entities");
+        }
+        
         return data.data;
     } catch (err) {
         throw err;

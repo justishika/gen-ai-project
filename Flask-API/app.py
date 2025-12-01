@@ -3,6 +3,7 @@ import google.generativeai as genai
 from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound, InvalidVideoId
 from config import GEMINI_API_KEY
 from flask_cors import CORS
+from ner_extractor import process_transcript
 import os
 
 app = Flask(__name__)
@@ -17,8 +18,17 @@ def youtube_summarizer():
     video_id = request.args.get('v')
     summary_type = request.args.get('type', 'short')
     
+    # Validate video_id
+    if not video_id:
+        return jsonify({"data": "Video ID is required", "error": True}), 400
+    
     try:
         transcript = get_transcript(video_id)
+        
+        # Validate transcript is not empty
+        if not transcript or len(transcript.strip()) == 0:
+            return jsonify({"data": "No transcript content found for this video", "error": True}), 400
+        
         # Cache the transcript for Q&A feature
         transcript_cache[video_id] = transcript
         
@@ -28,8 +38,31 @@ def youtube_summarizer():
     except InvalidVideoId:
         return jsonify({"data": "Invalid Video Id", "error": True})
     except Exception as e:
-        print(e)
-        return jsonify({"data": "Unable to Summarize the video", "error": True})
+        error_msg = str(e)
+        error_type = type(e).__name__
+        print(f"Error in youtube_summarizer: {error_type}: {error_msg}")
+        print(f"Full error details: {repr(e)}")
+        
+        # Provide more specific error messages - only check for actual API key errors
+        # Be very specific to avoid false positives - only show API key error if it's explicitly about the API key
+        is_api_key_error = (
+            ("Gemini API key missing" in error_msg) or
+            ("Invalid Gemini API key" in error_msg) or
+            ("Failed to configure Gemini API" in error_msg) or
+            ("API key missing" in error_msg and "GEMINI_API_KEY" in error_msg) or
+            ("invalid API key" in error_msg.lower() and "gemini" in error_msg.lower())
+        )
+        
+        if is_api_key_error:
+            return jsonify({"data": "API key error. Please check your Gemini API key configuration.", "error": True})
+        elif "transcript" in error_msg.lower() and ("not found" in error_msg.lower() or "no transcript" in error_msg.lower()):
+            return jsonify({"data": "Error fetching transcript. The video may not have captions available.", "error": True})
+        elif "InvalidVideoId" in error_type or "NoTranscriptFound" in error_type:
+            # These are already handled above, but just in case
+            return jsonify({"data": error_msg, "error": True})
+        else:
+            # For other errors, return the actual error message
+            return jsonify({"data": error_msg if error_msg else "Unable to Summarize the video", "error": True})
     
     return jsonify({"data": summary, "error": False})
 
@@ -79,6 +112,47 @@ def get_insights():
     except Exception as e:
         print(f"Error generating insights: {repr(e)}")
         return jsonify({"data": "Unable to generate insights", "error": True})
+
+@app.route('/extract-entities', methods=['GET'])
+def extract_entities_endpoint():
+    """Extract named entities, timeline, facts, and relationships from video transcript"""
+    video_id = request.args.get('v')
+    
+    if not video_id:
+        return jsonify({"data": "Video ID is required", "error": True}), 400
+    
+    try:
+        # Get transcript from cache or fetch it
+        if video_id not in transcript_cache:
+            transcript = get_transcript(video_id)
+            transcript_cache[video_id] = transcript
+        else:
+            transcript = transcript_cache[video_id]
+        
+        # Process transcript with NER
+        result = process_transcript(transcript)
+        
+        if not result.get('success'):
+            return jsonify({"data": result.get('error', 'NER processing failed'), "error": True}), 500
+        
+        return jsonify({"data": result, "error": False})
+    
+    except NoTranscriptFound:
+        return jsonify({"data": "No English Subtitles found", "error": True})
+    except InvalidVideoId:
+        return jsonify({"data": "Invalid Video Id", "error": True})
+    except Exception as e:
+        error_msg = str(e)
+        print(f"Error in extract_entities_endpoint: {error_msg}")
+        
+        # Check if it's a model download error
+        if "spaCy model not found" in error_msg or "download" in error_msg.lower():
+            return jsonify({
+                "data": "NER model not installed. Please run: python -m spacy download en_core_web_sm",
+                "error": True
+            }), 500
+        
+        return jsonify({"data": f"Unable to extract entities: {error_msg}", "error": True}), 500
 
 def get_transcript(video_id):
     api = YouTubeTranscriptApi()
@@ -161,10 +235,14 @@ def get_transcript(video_id):
 
 def gemini_summarize(transcript, summary_type='short'):
     api_key = os.environ.get('GEMINI_API_KEY') or GEMINI_API_KEY
-    if not api_key or not api_key.strip():
+    if not api_key or not api_key.strip() or api_key == 'YOUR_ACTUAL_API_KEY_HERE':
         raise Exception('Gemini API key missing; set GEMINI_API_KEY or update config.py')
     
-    genai.configure(api_key=api_key)
+    try:
+        genai.configure(api_key=api_key)
+    except Exception as e:
+        print(f"Error configuring Gemini API: {repr(e)}")
+        raise Exception(f"Failed to configure Gemini API: {str(e)}")
     
     max_chars = 60000
     if len(transcript) > max_chars:
@@ -172,13 +250,17 @@ def gemini_summarize(transcript, summary_type='short'):
     
     if summary_type == 'detailed':
         prompt = f"""You have to provide a detailed, in-depth summary of the following YouTube video transcript.
-Break it down into key sections with headings and bullet points.
+Break it down into key sections with clear headings and bullet points.
 Capture all the important details, examples, and nuances.
+Format your response with clear sections and use numbered lists or bullet points for better readability.
 
 Transcript:
 {transcript}"""
     else:
-        prompt = f"""You have to summarize a YouTube video using its transcript in 10 concise points.
+        prompt = f"""You have to summarize a YouTube video using its transcript in exactly 10 concise points.
+Format each point clearly starting with a number (1., 2., 3., etc.).
+Each point should be on a new line and be substantial enough to convey meaningful information.
+Make sure the summary is comprehensive and covers the main topics discussed in the video.
 
 Transcript:
 {transcript}"""
@@ -189,8 +271,22 @@ Transcript:
         print("Gemini request succeeded")
         return response.text
     except Exception as e:
-        print("Gemini request failed:", repr(e))
-        raise
+        error_str = str(e)
+        error_repr = repr(e)
+        print(f"Gemini request failed: {error_repr}")
+        
+        # Check for specific Gemini API errors
+        if "403" in error_str or "leaked" in error_str.lower() or "reported" in error_str.lower():
+            raise Exception("Your API key has been flagged as leaked. Please generate a new API key from https://aistudio.google.com/app/apikey and update it in Flask-API/config.py")
+        elif "API_KEY_INVALID" in error_str or "invalid API key" in error_str.lower() or "API key not valid" in error_str or "not valid" in error_str.lower():
+            raise Exception("Invalid Gemini API key. Please check your API key in Flask-API/config.py. Make sure you've added a valid API key (not the placeholder 'YOUR_API_KEY_HERE')")
+        elif "quota" in error_str.lower() or "rate limit" in error_str.lower():
+            raise Exception("Gemini API quota exceeded or rate limit reached. Please try again later.")
+        elif "safety" in error_str.lower() or "blocked" in error_str.lower():
+            raise Exception("Content was blocked by Gemini safety filters. Try a different video.")
+        else:
+            # Re-raise with more context
+            raise Exception(f"Gemini API error: {error_str}")
 
 def gemini_answer_question(transcript, question, conversation_history=[]):
     """Answer questions about the video using Gemini"""

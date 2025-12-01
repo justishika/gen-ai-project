@@ -3,3 +3,4 @@ Gunicorn
 google-generativeai
 youtube-transcript-api
 Flask-Cors
+spacy

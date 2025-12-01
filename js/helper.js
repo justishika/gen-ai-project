@@ -11,11 +11,29 @@ const timeout = function (s) {
 export const getJSON = async function (url) {
   try {
     const res = await Promise.race([fetch(url), timeout(TIMEOUT_SECONDS)]);
+    
+    // Check if response is ok before parsing JSON
+    if (!res.ok) {
+      let errorMessage = `Server error: ${res.status}`;
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.data || errorData.message || errorMessage;
+      } catch (e) {
+        // If JSON parsing fails, use status text
+        errorMessage = res.statusText || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+    
     const data = await res.json();
-
-    if (!res.ok) throw new Error(`${data.message} ${res.status}`);
     return data;
   } catch (err) {
+    // Provide more helpful error messages
+    if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+      throw new Error('Unable to connect to the server. Please make sure the Flask backend is running on http://127.0.0.1:5000');
+    } else if (err.message.includes('timeout')) {
+      throw new Error('Request timed out. The video might be too long or the server is taking too long to respond.');
+    }
     throw err;
   }
 };

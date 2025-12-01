@@ -5,3 +5,6 @@ __pycache__
 dist
 .parcel-cache
 .vscode
+Flask-API/config.py
+*.env
+.env
