@@ -9,7 +9,12 @@ import os
 import traceback
 import json
 import time
-from config import GEMINI_API_KEY
+
+# Try to import config, but handle failure for Vercel deployment
+try:
+    from config import GEMINI_API_KEY
+except ImportError:
+    GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 # --- CONFIGURATION ---
 app = Flask(__name__)
@@ -17,7 +22,11 @@ app.secret_key = os.urandom(24)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Configure Gemini
-genai.configure(api_key=GEMINI_API_KEY)
+if not GEMINI_API_KEY:
+    print("WARNING: GEMINI_API_KEY not found in config.py or environment variables.")
+else:
+    genai.configure(api_key=GEMINI_API_KEY)
+
 # Use the model the user has quota for
 GENERATION_MODEL = 'gemini-2.0-flash' 
 
@@ -138,7 +147,7 @@ def calculate_faithfulness(answer, context_text):
 
 # --- ROUTES ---
 
-@app.route('/summary', methods=['GET'])
+@app.route('/api/summary', methods=['GET'])
 def summary():
     video_id = request.args.get('v')
     summary_type = request.args.get('type', 'short')
@@ -201,7 +210,7 @@ def summary():
         traceback.print_exc()
         return jsonify({"error": True, "data": str(e)})
 
-@app.route('/ask', methods=['POST'])
+@app.route('/api/ask', methods=['POST'])
 def ask():
     start_time = time.time()
     try:
@@ -264,7 +273,7 @@ def ask():
         traceback.print_exc()
         return jsonify({"error": True, "data": f"Backend Error: {str(e)}"})
 
-@app.route('/extract-entities', methods=['GET'])
+@app.route('/api/extract-entities', methods=['GET'])
 def extract_entities():
     video_id = request.args.get('v')
     if not video_id:
@@ -310,7 +319,7 @@ def extract_entities():
         traceback.print_exc()
         return jsonify({"error": True, "data": str(e)})
 
-@app.route('/get-insights', methods=['GET'])
+@app.route('/api/get-insights', methods=['GET'])
 def get_insights():
     video_id = request.args.get('v')
     if not video_id:
@@ -345,6 +354,6 @@ def get_insights():
 
 # --- STARTUP ---
 if __name__ == '__main__':
-    print("!!! FRESH START SERVER V3.7 (METRICS ADDED) !!!")
+    print("!!! FRESH START SERVER V3.8 (VERCEL READY) !!!")
     print(f"Using Model: {GENERATION_MODEL}")
     app.run(port=5000, debug=False)
