@@ -5,3 +5,6 @@ google-generativeai
 scikit-learn
 numpy
 waitress
+chromadb
+sentence-transformers
+flask-executor

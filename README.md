@@ -15,9 +15,14 @@
 
 ### 3. 📊 Trust & Evaluation Metrics
 Every Q&A response includes real-time metrics to help you trust the AI:
-*   **🔍 Retrieval Score**: How relevant the found context is to your question (Cosine Similarity).
-*   **✅ Faithfulness**: How well the answer matches the retrieved context (Word Overlap/ROUGE-1).
-*   **⏱️ Latency**: Time taken to generate the response.
+*   **🔍 Retrieval Score**: Similarity score of the most relevant chunk found (Cosine Distance).
+*   **✅ Faithfulness**: Word overlap score between the answer and the retrieved context (ROUGE-1 style).
+*   **🎯 Answer Relevance**: Cosine similarity between the question and the generated answer.
+*   **🧠 Coherence**: LLM-evaluated score (1-5) of how logical and readable the answer is.
+*   **📏 Context Precision**: Ratio of relevant retrieved chunks to total retrieved chunks.
+*   **🔄 Context Recall**: Proxy metric indicating if sufficient information was retrieved.
+*   **🏆 MRR (Mean Reciprocal Rank)**: Rank of the first relevant chunk in the retrieval list.
+*   **⏱️ Latency**: Time taken to generate the response in seconds.
 
 ### 4. 🧠 Deep Insights & Entity Extraction
 *   **Named Entity Recognition (NER)**: Automatically identifies and categorizes People, Organizations, Locations, Dates, and more.
@@ -35,8 +40,9 @@ Every Q&A response includes real-time metrics to help you trust the AI:
 ### Backend
 *   **Framework**: Python Flask (REST API).
 *   **Server**: Waitress (Production-ready WSGI server).
-*   **AI Model**: Google **Gemini 2.0 Flash** (via `google-generativeai`).
-*   **RAG & NLP**: `scikit-learn` (TF-IDF, Cosine Similarity), `numpy`.
+*   **AI Model**: **Ollama** (Local/Cloud LLM hosting).
+*   **Vector Database**: **ChromaDB** (for RAG context storage).
+*   **NLP & Embeddings**: `sentence-transformers`, `spacy` (NER), `scikit-learn`.
 *   **Data Source**: `youtube-transcript-api`.
 
 ---

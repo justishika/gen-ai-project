@@ -462,25 +462,37 @@ export const renderNERData = function (nerData) {
     if (key_facts) {
         markup += `
             <div class="ner-section-card">
-                <h3 class="ner-section-title">📊 Key Facts</h3>
-                <div class="facts-grid">
-                    <div class="fact-item">
-                        <span class="fact-label">People Mentioned:</span>
-                        <span class="fact-value">${key_facts.people_mentioned || 0}</span>
+                <h3 class="ner-section-title">💡 Key Insights & Trivia</h3>
+                
+                ${key_facts.smart_insights && key_facts.smart_insights.length > 0 ? `
+                    <div class="smart-insights-list">
+                        ${key_facts.smart_insights.map(insight => `
+                            <div class="insight-item">
+                                <span class="insight-icon">✨</span>
+                                <span class="insight-text">${escapeHtml(insight)}</span>
+                            </div>
+                        `).join('')}
                     </div>
-                    <div class="fact-item">
-                        <span class="fact-label">Organizations:</span>
-                        <span class="fact-value">${key_facts.organizations || 0}</span>
+                ` : `
+                    <div class="facts-grid">
+                        <div class="fact-item">
+                            <span class="fact-label">People Mentioned:</span>
+                            <span class="fact-value">${key_facts.people_mentioned || 0}</span>
+                        </div>
+                        <div class="fact-item">
+                            <span class="fact-label">Organizations:</span>
+                            <span class="fact-value">${key_facts.organizations || 0}</span>
+                        </div>
+                        <div class="fact-item">
+                            <span class="fact-label">Locations:</span>
+                            <span class="fact-value">${key_facts.locations || 0}</span>
+                        </div>
+                        <div class="fact-item">
+                            <span class="fact-label">Dates Mentioned:</span>
+                            <span class="fact-value">${key_facts.dates_mentioned || 0}</span>
+                        </div>
                     </div>
-                    <div class="fact-item">
-                        <span class="fact-label">Locations:</span>
-                        <span class="fact-value">${key_facts.locations || 0}</span>
-                    </div>
-                    <div class="fact-item">
-                        <span class="fact-label">Dates Mentioned:</span>
-                        <span class="fact-value">${key_facts.dates_mentioned || 0}</span>
-                    </div>
-                </div>
+                `}
                 
                 ${key_facts.top_people && key_facts.top_people.length > 0 ? `
                     <div class="top-entities">
@@ -576,6 +588,25 @@ export const renderNERData = function (nerData) {
                 </div>
             </div>
         `;
+    }
+
+    // Check if we have structured data
+    const hasStructuredData = (key_facts || (entities && Object.keys(entities).length > 0) || (timeline && timeline.length > 0) || (relationships && relationships.length > 0));
+
+    if (!hasStructuredData) {
+        // Fallback for when LLM returns unstructured text or parsing failed but returned text
+        const rawText = nerData.error_text || nerData.text || (typeof nerData === 'string' ? nerData : JSON.stringify(nerData));
+
+        if (rawText && rawText.length > 20) {
+            // It's likely a summary or text response
+            markup += `
+                <div class="ner-section-card">
+                    <h3 class="ner-section-title">Analysis Result</h3>
+                    <div class="ner-text-fallback">${escapeHtml(rawText)}</div>
+                </div>`;
+        } else {
+            markup += `<div class="error">Unable to extract structured entities. Please try again.</div>`;
+        }
     }
 
     markup += '</div>';

@@ -10,10 +10,31 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+const normalizeYouTubeUrl = function (url) {
+    try {
+        const parsed = new URL(url);
+
+        // Handle Shorts → convert to youtu.be
+        if (
+            parsed.hostname.includes("youtube.com") &&
+            parsed.pathname.startsWith("/shorts/")
+        ) {
+            const videoId = parsed.pathname.split("/shorts/")[1];
+            return `https://youtu.be/${videoId}${parsed.search}`;
+        }
+
+        // Return unchanged for other URLs
+        return url;
+    } catch (err) {
+        return url;
+    }
+};
+
 const controlSummary = async function (summaryType = 'short') {
     try {
         // 0. get video URL from view
-        const videoUrl = view.getVideoUrl();
+        const videoUrlRaw = view.getVideoUrl();
+        const videoUrl = normalizeYouTubeUrl(videoUrlRaw);
 
         // 1. get video Id
         const videoId = getVideoId(videoUrl);

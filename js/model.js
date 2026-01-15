@@ -1,5 +1,5 @@
 import axios from "axios";
-import { API_URL } from "./config";
+import { API_URL, YOUTUBE_OEMBED_URL } from "./config";
 import { getJSON } from "./helper";
 
 export const state = {
@@ -29,7 +29,7 @@ export const loadSummary = async function (summaryType = 'short') {
 
 export const loadMetaData = async function (videoId) {
     try {
-        const requestUrl = `https://youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
+        const requestUrl = `${YOUTUBE_OEMBED_URL}?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
         const result = await axios.get(requestUrl);
         state.title = result.data.title;
         state.thumbnailUrl = result.data.thumbnail_url;
