@@ -358,11 +358,16 @@ export const renderAnswer = function (answer, metrics) {
         let metricsMarkup = '';
         if (metrics) {
             metricsMarkup = `
-                <div class="metrics-container" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.8rem; color: #aaa;">
-                    <div style="display: flex; gap: 15px;">
-                        <span title="Cosine Similarity of Query vs Context">🔍 Retrieval: <strong>${(metrics.retrieval_score * 100).toFixed(1)}%</strong></span>
-                        <span title="Word Overlap of Answer vs Context">✅ Faithfulness: <strong>${(metrics.faithfulness * 100).toFixed(1)}%</strong></span>
-                        <span title="Time taken">⏱️ Latency: <strong>${metrics.latency}s</strong></span>
+                <div class="metrics-container" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <div class="metrics-grid">
+                        <span class="metric-item" title="Cosine Similarity of Query vs Context">🔍 Retrieval: <strong>${(metrics.retrieval_score * 100).toFixed(1)}%</strong></span>
+                        <span class="metric-item" title="Word Overlap (ROUGE-1)">✅ Faithfulness: <strong>${(metrics.faithfulness * 100).toFixed(1)}%</strong></span>
+                        <span class="metric-item" title="Cosine Similarity of Question vs Answer">🎯 Relevance: <strong>${(metrics.answer_relevance * 100).toFixed(1)}%</strong></span>
+                        <span class="metric-item" title="LLM Coherence Score (0-1)">🧠 Coherence: <strong>${(metrics.coherence * 100).toFixed(0)}%</strong></span>
+                        <span class="metric-item" title="Precision of Retrieved Context">📏 Precision: <strong>${(metrics.context_precision * 100).toFixed(1)}%</strong></span>
+                        <span class="metric-item" title="Context Recall Proxy">🔄 Recall: <strong>${(metrics.context_recall_proxy * 100).toFixed(0)}%</strong></span>
+                        <span class="metric-item" title="Mean Reciprocal Rank">🏆 MRR: <strong>${metrics.mrr.toFixed(2)}</strong></span>
+                        <span class="metric-item" title="Generation Time">⏱️ Latency: <strong>${metrics.latency}s</strong></span>
                     </div>
                 </div>
             `;

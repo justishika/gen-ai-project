@@ -1351,3 +1351,33 @@ body {
         line-height: 1.5;
         color: var(--text-main);
     }
+
+/* Metric Grid Styles */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.metric-item {
+    font-size: 0.8rem;
+    color: #aaa;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: background 0.2s;
+}
+
+.metric-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.metric-item strong {
+    font-size: 1rem;
+    color: #e2e8f0;
+}
