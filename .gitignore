@@ -8,3 +8,11 @@ dist
 Flask-API/config.py
 *.env
 .env
+# Logs
+*.log
+Flask-API/backend.log
+
+# Debug scripts
+debug_*.py
+probe_server.py
+check_requests.py

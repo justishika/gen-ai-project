@@ -24,6 +24,15 @@ except ImportError:
     CHUNK_SIZE = int(os.environ.get("CHUNK_SIZE", 500))
 
 # --- CONFIGURATION ---
+import logging
+
+# Setup logging
+logging.basicConfig(
+    filename='backend.log',
+    level=logging.ERROR,
+    format='%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+)
+
 app = Flask(__name__)
 print("!!! APP.PY LOADED WITH DEBUG PRINTS !!!", flush=True)
 app.secret_key = os.urandom(24)
@@ -34,6 +43,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 
 if not OLLAMA_API_KEY:
     print("WARNING: OLLAMA_API_KEY not found in config.py or environment variables.")
+    logging.warning("OLLAMA_API_KEY not found.")
 else:
     print("Ollama Cloud configured. Model:", OLLAMA_MODEL)
 
@@ -158,44 +168,49 @@ def get_transcript(video_id):
 
 # --- RAG INTEGRATION (NEW) ---
 import rag_engine
-import rag_engine
 import metrics_engine
 import prompts
+import threading
+
+# Lock for ChromaDB writes
+rag_lock = threading.Lock()
 
 def create_rag_index(video_id, transcript_data):
     """
     Indexes the video transcript using ChromaDB (handled by rag_engine).
+    Protected by lock to prevent concurrent writes.
     """
-    chunks = []
-    current_chunk = ""
-    current_start = 0
+    with rag_lock:
+        chunks = []
+        current_chunk = ""
+        current_start = 0
 
-    for entry in transcript_data:
-        text = entry['text']
-        start = entry['start']
+        for entry in transcript_data:
+            text = entry['text']
+            start = entry['start']
 
-        if not current_chunk:
-            current_start = start
+            if not current_chunk:
+                current_start = start
 
-        current_chunk += " " + text
+            current_chunk += " " + text
 
-        # Keep chunk size reasonable for embedding models
-        if len(current_chunk) > CHUNK_SIZE:
-            chunks.append({
-                'text': current_chunk.strip(),
-                'start': current_start
-            })
-            current_chunk = ""
-            current_start = start # Update start for next chunk
+            # Keep chunk size reasonable for embedding models
+            if len(current_chunk) > CHUNK_SIZE:
+                chunks.append({
+                    'text': current_chunk.strip(),
+                    'start': current_start
+                })
+                current_chunk = ""
+                current_start = start # Update start for next chunk
 
-    if current_chunk:
-        chunks.append({'text': current_chunk.strip(), 'start': current_start})
-    
-    # Store in ChromaDB
-    rag_engine.add_video_to_index(video_id, chunks)
+        if current_chunk:
+            chunks.append({'text': current_chunk.strip(), 'start': current_start})
+        
+        # Store in ChromaDB
+        rag_engine.add_video_to_index(video_id, chunks)
 
-    # Return chunks for basic usage if needed, but Vector DB is primary now
-    return {'chunks': chunks}
+        # Return chunks for basic usage if needed, but Vector DB is primary now
+        return {'chunks': chunks}
 
 def retrieve_context(video_id, query, top_k=5):
     """Retrieves relevant chunks using ChromaDB Semantic Search."""
@@ -542,6 +557,8 @@ def extract_entities():
 
     except Exception as e:
         traceback.print_exc()
+        logging.error(f"Extract Entities Failed: {str(e)}")
+        logging.error(traceback.format_exc())
         return jsonify({"error": True, "data": str(e)})
 
 
