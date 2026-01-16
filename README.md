@@ -6,7 +6,7 @@
 
 ### 1. 📝 Dual-Mode Summarization
 *   **10-Point Summary**: Get the gist of any video in exactly 10 concise, numbered points. Perfect for quick consumption.
-*   **In-Depth Summary**: A comprehensive, structured report with IEEE-style headings, subheadings, and bullet points. Ideal for lectures and technical content.
+*   **In-Depth Summary**: A comprehensive, structured summary with headings, subheadings, and bullet points. Ideal for lectures and technical content.
 
 ### 2. 💬 Interactive Q&A with RAG
 *   **Chat with Video**: Ask specific questions about the video content.
